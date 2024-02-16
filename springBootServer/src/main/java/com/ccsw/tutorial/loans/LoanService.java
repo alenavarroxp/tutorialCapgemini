@@ -5,6 +5,7 @@ import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 
+import com.ccsw.tutorial.common.exception.ConflictException;
 import com.ccsw.tutorial.loans.model.Loan;
 import com.ccsw.tutorial.loans.model.LoanDto;
 import com.ccsw.tutorial.loans.model.LoanSearchDto;
@@ -26,7 +27,7 @@ public interface LoanService {
      * @param id
      * @param dto
      */
-    void save(Long id, LoanDto dto) throws Exception;
+    void save(Long id, LoanDto dto) throws ConflictException;
 
     /**
      * @param id

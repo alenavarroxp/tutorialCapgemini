@@ -1,5 +1,6 @@
 import { Component, Inject, OnInit } from '@angular/core';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { LoanService } from '../loan.service';
 import { Loan } from '../model/Loan';
 import { Client } from 'src/app/client/model/Client';
@@ -17,13 +18,15 @@ export class LoanEditComponent implements OnInit {
   loan: Loan;
   clients: Client[];
   games: Game[];
+  error: string;
 
   constructor(
     public dialogRef: MatDialogRef<LoanEditComponent>,
     @Inject(MAT_DIALOG_DATA) public data: any,
     private loanService: LoanService,
     private gameService: GameService,
-    private clientService: ClientService
+    private clientService: ClientService,
+    private snackBar: MatSnackBar
   ) {}
 
   ngOnInit(): void {
@@ -47,27 +50,36 @@ export class LoanEditComponent implements OnInit {
       }
     });
 
-    this.clientService.getAllClients().subscribe(
-      clients => {
-          this.clients = clients
+    this.clientService.getAllClients().subscribe((clients) => {
+      this.clients = clients;
 
-          if (this.loan.client != null) {
-              let clientFilter: Client[] = clients.filter(client => client.id == this.data.loan.client.id);
-              if (clientFilter != null) {
-                  this.loan.client = clientFilter[0];
-              }
-          }
+      if (this.loan.client != null) {
+        let clientFilter: Client[] = clients.filter(
+          (client) => client.id == this.data.loan.client.id
+        );
+        if (clientFilter != null) {
+          this.loan.client = clientFilter[0];
+        }
       }
-  );
+    });
   }
 
   onSave() {
-    this.loanService.saveLoan(this.loan).subscribe((result) => {
-      this.dialogRef.close();
-    });
+    this.loanService.saveLoan(this.loan).subscribe(
+      (next) => {
+        this.dialogRef.close(next);
+      },
+      (error) => {this.error = error.error; this.openSnackBar(this.error);}
+    );
   }
 
   onClose() {
     this.dialogRef.close();
+  }
+
+  openSnackBar(message: string) {
+    this.snackBar.open(message, 'Cerrar', {
+      duration: 3000,
+    });
   }
 }

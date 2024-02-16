@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 
 import com.ccsw.tutorial.client.ClientService;
 import com.ccsw.tutorial.common.criteria.SearchCriteria;
+import com.ccsw.tutorial.common.exception.ConflictException;
 import com.ccsw.tutorial.game.GameService;
 import com.ccsw.tutorial.loans.model.FilterDto;
 import com.ccsw.tutorial.loans.model.Loan;
@@ -65,7 +66,7 @@ public class LoanServiceImpl implements LoanService {
     }
 
     @Override
-    public void save(Long id, LoanDto dto) throws Exception {
+    public void save(Long id, LoanDto dto) throws ConflictException {
         Loan loan;
 
         if (id == null) {
@@ -82,36 +83,32 @@ public class LoanServiceImpl implements LoanService {
         LocalDate startDate = loan.getStartDate();
         LocalDate endDate = loan.getEndDate();
 
-        try {
-            if (startDate != null && endDate != null && endDate.isBefore(startDate)) {
-                throw new Exception("La fecha de fin no puede ser anterior a la fecha de comienzo");
-            }
-
-            if (ChronoUnit.DAYS.between(startDate, endDate) > 14) {
-                throw new Exception("El periodo de préstamo máximo es de 14 días");
-            }
-
-            List<Loan> loansForClientInDateRange = loanRepository
-                    .findByClientAndStartDateLessThanEqualAndEndDateGreaterThanEqual(loan.getClient(), endDate,
-                            startDate);
-
-            if (loansForClientInDateRange.size() >= 2) {
-                throw new Exception("El cliente ya tiene 2 préstamos en este rango de fechas");
-            }
-
-            List<Loan> loansInDateRange = loanRepository
-                    .findByGameAndStartDateLessThanEqualAndEndDateGreaterThanEqual(loan.getGame(), endDate, startDate);
-
-            for (Loan existingLoan : loansInDateRange) {
-                if (!existingLoan.getId().equals(loan.getId())) {
-                    throw new Exception("El juego ya está prestado a otro cliente en este rango de fechas");
-                }
-            }
-
-            this.loanRepository.save(loan);
-        } catch (Exception e) {
-            throw new Exception("No se pudo guardar el préstamo: " + e.getMessage());
+        if (startDate != null && endDate != null && endDate.isBefore(startDate)) {
+            throw new ConflictException("La fecha de fin no puede ser anterior a la fecha de comienzo", 410);
         }
+
+        if (ChronoUnit.DAYS.between(startDate, endDate) > 14) {
+            throw new ConflictException("El periodo de préstamo máximo es de 14 días", 411);
+        }
+
+        List<Loan> loansForClientInDateRange = loanRepository
+                .findByClientAndStartDateLessThanEqualAndEndDateGreaterThanEqual(loan.getClient(), endDate, startDate);
+
+        if (loansForClientInDateRange.size() >= 2) {
+            throw new ConflictException("El cliente ya tiene 2 préstamos en este rango de fechas", 412);
+        }
+
+        List<Loan> loansInDateRange = loanRepository
+                .findByGameAndStartDateLessThanEqualAndEndDateGreaterThanEqual(loan.getGame(), endDate, startDate);
+
+        for (Loan existingLoan : loansInDateRange) {
+            if (!existingLoan.getId().equals(loan.getId())) {
+                throw new ConflictException("El juego ya está prestado a otro cliente en este rango de fechas", 413);
+            }
+        }
+
+        this.loanRepository.save(loan);
+
     }
 
     @Override

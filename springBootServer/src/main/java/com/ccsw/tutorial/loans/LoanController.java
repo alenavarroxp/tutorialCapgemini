@@ -8,6 +8,7 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.ccsw.tutorial.common.exception.ConflictException;
 import com.ccsw.tutorial.loans.model.Loan;
 import com.ccsw.tutorial.loans.model.LoanDto;
 import com.ccsw.tutorial.loans.model.LoanSearchDto;
@@ -47,8 +49,14 @@ public class LoanController {
 
     @Operation(summary = "Save or Update", description = "Method that saves or updates a Loan")
     @RequestMapping(path = { "", "/{id}" }, method = RequestMethod.PUT)
-    public void save(@PathVariable(name = "id", required = false) Long id, @RequestBody LoanDto dto) throws Exception {
-        this.loanService.save(id, dto);
+    public ResponseEntity<String> save(@PathVariable(name = "id", required = false) Long id, @RequestBody LoanDto dto)
+            throws ConflictException {
+        try {
+            this.loanService.save(id, dto);
+            return ResponseEntity.ok().build();
+        } catch (ConflictException e) {
+            return ResponseEntity.status(e.getCode()).body(e.getMessage());
+        }
     }
 
     @Operation(summary = "Delete", description = "Method that deletes a Loan")
